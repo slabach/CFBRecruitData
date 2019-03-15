@@ -1,10 +1,12 @@
-# core modules
-
-# other modules
+# import modules
 import pandas as pd
 from lxml import html
+from lxml import etree
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.firefox.options import Options
+from bs4 import BeautifulSoup
+import requests
 
 
 class App:
@@ -15,9 +17,14 @@ class App:
         self.team = team
 
     def get_recruit_data(self):
+        # gecko = os.path.normpath(os.path.join(os.path.dirname(__file__), 'geckodriver'))
+        # binary = FirefoxBinary(r'C:\Program Files (x86)\Mozilla Firefox\firefox.exe')
         cap = DesiredCapabilities().FIREFOX
         cap["marionette"] = True
         driver = webdriver.Firefox(capabilities=cap, executable_path="C:\\Users\\bslabach\\PycharmProjects\\RecruitingData\\geckodriver.exe")
+        options = Options()
+        options.add_argument('--headless')
+
         driver.get("https://247sports.com/college/"+self.team+"/Season/"+str(self.cur_year)+"-Football/Offers/")
         show_more_xpath = \
             '//*[@id="page-content"]/div[1]/section[2]/section/div/ul/li[@class="ri-page__list-item showmore_blk"]/a'
@@ -39,10 +46,13 @@ class App:
                             'High School',
                             'Metrics',
                             'Composite Rating',
-                            'Status')]
+                            '247 Rating',
+                            'Status',
+                            'Crystal Ball / %')]
 
         for element in offers_list:
 
+            # try:
             recruit = element.find('.//a[@href][1]')
             recruit_url = recruit.attrib['href']
             recruit_name = recruit.text
@@ -57,15 +67,69 @@ class App:
                 except AttributeError:
                     recruit_status = "N/A"
             else:
-                recruit_status = element.find('.//div[5]/div/span').text
+                try:
+                    recruit_status = element.find('.//div[5]/div/span').text
+                except AttributeError:
+                    recruit_status = element.find('.//div[5]/img').get('title')
+
+            recruit_url_trimmed = "https://"+recruit_url[2:].strip()
+
+            driver2 = webdriver.Firefox(capabilities=cap,
+                                        executable_path="C:\\Users\\bslabach\\PycharmProjects\\RecruitingData\\geckodriver.exe",
+                                        options=options)
+            driver2.get(recruit_url_trimmed)
+            tfs_page = driver2.page_source
+            tfs_tree = html.fromstring(tfs_page)
+
+            try:
+                tfs_rating = tfs_tree.xpath('//*[@id="page-content"]/div[1]/section/header/section[2]/section[1]/ul[@class="tfs-ranking-list"]/li[1]/span[2]/text()')
+
+                if not tfs_rating:
+                    tfs_rating = "N/A"
+                else:
+                    tfs_rating = tfs_rating[0]
+            except AttributeError:
+                tfs_rating = "N/A"
+
+            try:
+                tfs_cb_pick = tfs_tree.xpath('//*[@id="page-content"]/div[1]/section/header/section[2]/section[2]/ul[1]/li[2]/span[1]/text()')
+                tfs_cb_perc = tfs_tree.xpath('//*[@id="page-content"]/div[1]/section/header/section[2]/section[2]/ul[1]/li[2]/span[2]/text()')
+                # print(tfs_cb_perc)
+
+                if not tfs_rating:
+                    cb_info = "none"
+                else:
+                    tfs_cb_pick = tfs_cb_pick[0].strip()
+                    tfs_cb_perc = tfs_cb_perc[0].strip()
+
+                    cb_info = tfs_cb_pick + " / " + tfs_cb_perc
+            except AttributeError:
+                cb_info = "none"
+            except IndexError:
+                cb_info = "none"
+
+            driver2.quit()
 
             recruit_data = (recruit_name.strip(),
-                            recruit_url[2:].strip(),
+                            recruit_url_trimmed,
                             recruit_pos.strip(),
                             recruit_hs.strip(),
                             recruit_metrics.strip(),
                             recruit_rating.strip(),
-                            recruit_status)
+                            tfs_rating,
+                            recruit_status,
+                            cb_info)
+            # except:
+            #     recruit_data = ("This",
+            #                     "is",
+            #                     "an",
+            #                     "imaginary",
+            #                     "recruit.",
+            #                     "Go",
+            #                     # "",
+            #                     "Hazell!")
+
+            print(recruit_data)
 
             list_of_results.append(recruit_data)
 
@@ -81,8 +145,10 @@ def main():
     # year = now.year
     year = 2020
     team = "purdue"
+    output_file = "lib/output-"+team+"-"+str(year)+".csv"
 
-    a = App("lib/teams-fbs.json", "lib/output.csv", year, team)
+    a = App("lib/teams-fbs.json", output_file, year, team)
+
     a.get_recruit_data()
 
 

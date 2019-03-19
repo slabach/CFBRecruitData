@@ -141,14 +141,14 @@ class App:
             rvls_fname = driver3.find_element_by_css_selector('div.first-name.ng-binding').text
             rvls_lname = driver3.find_element_by_css_selector('div.last-name.ng-binding').text
             rvls_name = rvls_fname + " " + rvls_lname
-            # rvls_year = driver3.find_element_by_css_selector('td.year > span.pos.ng-binding.ng-scope').text
+            rvls_year = driver3.find_element_by_css_selector('td.year > span.pos.ng-binding.ng-scope').text
 
-            diff_ratio = fuzz.token_sort_ratio(rvls_name,recruit_name.strip())
+            diff_ratio = fuzz.token_sort_ratio(rvls_name, recruit_name.strip())
 
             # print(f"{rvls_fname} {rvls_lname}, {rvls_year}, {rvls_rating}")
-            print(f"{diff_ratio}")
+            print(f"{diff_ratio}, {rvls_year}")
 
-            if diff_ratio > 90:
+            if (diff_ratio >= 85) and (rvls_year.strip() == str(self.cur_year)):
                 rvls_rating = driver3.find_element_by_css_selector('td.rating > span.pos.ng-binding.ng-scope').text
 
                 if not rvls_rating:

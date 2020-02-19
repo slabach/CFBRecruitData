@@ -23,7 +23,7 @@ class App:
         options = Options()
         options.add_argument('--headless')
         driver = webdriver.Firefox(capabilities=cap,
-                                   executable_path="C:\\Users\\bslabach\\PycharmProjects\\RecruitingData\\geckodriver.exe",
+                                   executable_path="C:\\Users\\bs24587\\PycharmProjects\\CFBRecruitData\\geckodriver.exe",
                                    options=options)
 
         driver.get("https://247sports.com/college/"+self.team+"/Season/"+str(self.cur_year)+"-Football/Offers/")
@@ -40,6 +40,7 @@ class App:
         html_tree = html.fromstring(offers_page)
 
         offers_list = html_tree.xpath(recruit_xpath)
+        driver.quit()
 
         list_of_results = [('Recruit Name',
                             'Position',
@@ -47,7 +48,7 @@ class App:
                             'Metrics',
                             'Composite Rating',
                             '247 Rating',
-                            'Rivals Rating',
+                            # 'Rivals Rating',
                             'Status',
                             'Crystal Ball: Pick / %',
                             '247 Link')]
@@ -77,7 +78,7 @@ class App:
             recruit_url_trimmed = "https://"+recruit_url[2:].strip()
 
             driver2 = webdriver.Firefox(capabilities=cap,
-                                        executable_path="C:\\Users\\bslabach\\PycharmProjects\\RecruitingData\\geckodriver.exe",
+                                        executable_path="C:\\Users\\bs24587\\PycharmProjects\\CFBRecruitData\\geckodriver.exe",
                                         options=options)
             driver2.get(recruit_url_trimmed)
             tfs_page = driver2.page_source
@@ -124,39 +125,39 @@ class App:
 
             driver2.quit()
 
-            rivals_search_url = 'https://n.rivals.com/search'
-            driver3 = webdriver.Firefox(capabilities=cap,
-                                        executable_path="C:\\Users\\bslabach\\PycharmProjects\\RecruitingData\\geckodriver.exe",
-                                        options=options)
-            driver3.get(rivals_search_url)
-
-            editor = WebDriverWait(driver3, 10).until(
-                EC.visibility_of_element_located((By.XPATH, '//*[@id="search_query"]')))
-            editor.send_keys(recruit_name.strip())
-            editor.submit()
-
-            WebDriverWait(driver3, 10).until(
-                EC.visibility_of_element_located((By.XPATH, '//*[@id="content_"]')))
-
-            rvls_fname = driver3.find_element_by_css_selector('div.first-name.ng-binding').text
-            rvls_lname = driver3.find_element_by_css_selector('div.last-name.ng-binding').text
-            rvls_name = rvls_fname + " " + rvls_lname
-            rvls_year = driver3.find_element_by_css_selector('td.year > span.pos.ng-binding.ng-scope').text
-
-            diff_ratio = fuzz.token_sort_ratio(rvls_name, recruit_name.strip())
+            # rivals_search_url = 'https://n.rivals.com/search'
+            # driver3 = webdriver.Firefox(capabilities=cap,
+            #                             executable_path="C:\\Users\\bslabach\\PycharmProjects\\RecruitingData\\geckodriver.exe",
+            #                             options=options)
+            # driver3.get(rivals_search_url)
+            #
+            # editor = WebDriverWait(driver3, 10).until(
+            #     EC.visibility_of_element_located((By.XPATH, '//*[@id="search_query"]')))
+            # editor.send_keys(recruit_name.strip())
+            # editor.submit()
+            #
+            # WebDriverWait(driver3, 10).until(
+            #     EC.visibility_of_element_located((By.XPATH, '//*[@id="content_"]')))
+            #
+            # rvls_fname = driver3.find_element_by_css_selector('div.first-name.ng-binding').text
+            # rvls_lname = driver3.find_element_by_css_selector('div.last-name.ng-binding').text
+            # rvls_name = rvls_fname + " " + rvls_lname
+            # rvls_year = driver3.find_element_by_css_selector('td.year > span.pos.ng-binding.ng-scope').text
+            #
+            # diff_ratio = fuzz.token_sort_ratio(rvls_name, recruit_name.strip())
 
             # print(f"{rvls_fname} {rvls_lname}, {rvls_year}, {rvls_rating}")
-            print(f"{diff_ratio}, {rvls_year}")
+            # print(f"{diff_ratio}, {rvls_year}")
+            #
+            # if (diff_ratio >= 85) and (rvls_year.strip() == str(self.cur_year)):
+            #     rvls_rating = driver3.find_element_by_css_selector('td.rating > span.pos.ng-binding.ng-scope').text
+            #
+            #     if not rvls_rating:
+            #         rvls_rating = "N/A"
+            # else:
+            #     rvls_rating = "Look up manually"
 
-            if (diff_ratio >= 85) and (rvls_year.strip() == str(self.cur_year)):
-                rvls_rating = driver3.find_element_by_css_selector('td.rating > span.pos.ng-binding.ng-scope').text
-
-                if not rvls_rating:
-                    rvls_rating = "N/A"
-            else:
-                rvls_rating = "Look up manually"
-
-            driver3.quit()
+            # driver3.quit()
 
             recruit_data = (recruit_name.strip(),
                             recruit_pos.strip(),
@@ -164,7 +165,7 @@ class App:
                             recruit_metrics.strip(),
                             recruit_rating.strip(),
                             tfs_rating,
-                            rvls_rating,
+                            # rvls_rating,
                             recruit_status,
                             cb_info,
                             recruit_url_trimmed)
@@ -187,13 +188,12 @@ class App:
             df.to_csv(self.output_path, index=False, header=False)
 
         print(list_of_results)
-        driver.quit()
 
 
 def main():
     # now = datetime.datetime.now()
     # year = now.year
-    year = 2020
+    year = 2021
     team = "purdue"
     output_file = "lib/output-"+team+"-"+str(year)+".csv"
 
